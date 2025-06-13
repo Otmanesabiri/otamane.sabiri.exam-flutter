@@ -70,63 +70,68 @@ class _ConversationListScreenState extends State<ConversationListScreen> {
     final formatter = DateFormat.jm();
     final formattedTime = formatter.format(conversation.timestamp);
     
-    return ListTile(
-      leading: CircleAvatar(
-        backgroundColor: Colors.blue,
-        child: Text(conversation.contactName[0].toUpperCase()),
-      ),
-      title: Text(
-        conversation.contactName,
-        style: const TextStyle(fontWeight: FontWeight.bold),
-      ),
-      subtitle: Text(
-        conversation.lastMessage,
-        maxLines: 1,
-        overflow: TextOverflow.ellipsis,
-      ),
-      trailing: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        crossAxisAlignment: CrossAxisAlignment.end,
-        children: [
-          Text(
-            formattedTime,
-            style: TextStyle(
-              color: conversation.unreadCount > 0 ? Colors.blue : Colors.grey,
-              fontSize: 12,
-            ),
-          ),
-          const SizedBox(height: 5),
-          if (conversation.unreadCount > 0)
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-              decoration: BoxDecoration(
-                color: Colors.blue,
-                borderRadius: BorderRadius.circular(10),
-              ),
-              child: Text(
-                '${conversation.unreadCount}',
-                style: const TextStyle(color: Colors.white, fontSize: 12),
+    return Card(
+      elevation: 1.0,
+      margin: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 4.0),
+      child: ListTile(
+        leading: CircleAvatar(
+          backgroundColor: Colors.blue,
+          child: Text(conversation.contactName[0].toUpperCase()),
+        ),
+        title: Text(
+          conversation.contactName,
+          style: const TextStyle(fontWeight: FontWeight.bold),
+        ),
+        subtitle: Text(
+          conversation.lastMessage,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+        ),
+        trailing: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          crossAxisAlignment: CrossAxisAlignment.end,
+          children: [
+            Text(
+              formattedTime,
+              style: TextStyle(
+                color: conversation.unreadCount > 0 ? Colors.blue : Colors.grey,
+                fontSize: 12,
               ),
             ),
-        ],
-      ),
-      onTap: () {
-        context.read<ConversationBloc>().add(OpenConversation(conversation.id));
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (context) => ConversationDetailScreen(
-              conversationId: conversation.id,
-              contactName: conversation.contactName,
+            const SizedBox(height: 5),
+            if (conversation.unreadCount > 0)
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                decoration: BoxDecoration(
+                  color: Colors.blue,
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Text(
+                  '${conversation.unreadCount}',
+                  style: const TextStyle(color: Colors.white, fontSize: 12),
+                ),
+              ),
+          ],
+        ),
+        onTap: () {
+          // Ceci déclenche l'événement pour ouvrir la conversation et naviguer vers l'écran de détail
+          context.read<ConversationBloc>().add(OpenConversation(conversation.id));
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => ConversationDetailScreen(
+                conversationId: conversation.id,
+                contactName: conversation.contactName,
+              ),
             ),
-          ),
-        ).then((_) {
-          // Reload conversations when returning from details screen
-          if (mounted) {
-            context.read<ConversationBloc>().add(LoadConversations());
-          }
-        });
-      },
+          ).then((_) {
+            // Reload conversations when returning from details screen
+            if (mounted) {
+              context.read<ConversationBloc>().add(LoadConversations());
+            }
+          });
+        },
+      ),
     );
   }
 

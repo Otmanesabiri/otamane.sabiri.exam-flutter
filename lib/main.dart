@@ -20,6 +20,7 @@ class MyApp extends StatelessWidget {
       ],
       child: MaterialApp(
         title: 'Chat App',
+        debugShowCheckedModeBanner: false, // Enlève la bannière de débogage
         theme: ThemeData(
           colorScheme: ColorScheme.fromSeed(seedColor: Colors.blue),
           useMaterial3: true,

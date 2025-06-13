@@ -23,6 +23,7 @@ class ConversationDetailScreen extends StatefulWidget {
 class _ConversationDetailScreenState extends State<ConversationDetailScreen> {
   final TextEditingController _messageController = TextEditingController();
   final ScrollController _scrollController = ScrollController();
+  List<Message>? _cachedMessages;
 
   @override
   void initState() {
@@ -80,18 +81,17 @@ class _ConversationDetailScreenState extends State<ConversationDetailScreen> {
       body: BlocConsumer<ConversationBloc, ConversationState>(
         listener: (context, state) {
           print('⚡ ConversationDetailScreen - state received: ${state.runtimeType}');
-          if (state is MessagesLoaded) {
+          if (state is MessagesLoaded && state.conversationId == widget.conversationId) {
             print('⚡ MessagesLoaded state - conversation ID: ${state.conversationId}, widget ID: ${widget.conversationId}');
-            if (state.conversationId == widget.conversationId) {
-              // Scroll to bottom when new messages are loaded
-              WidgetsBinding.instance.addPostFrameCallback((_) {
-                _scrollToBottom();
-              });
-            }
+            _cachedMessages = state.messages;
+            // Scroll to bottom when new messages are loaded
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              _scrollToBottom();
+            });
           }
         },
         buildWhen: (previous, current) {
-          // Only rebuild if the state is relevant to this screen
+          // Only rebuild for loading, error, or messages for THIS conversation
           if (current is MessagesLoaded) {
             return current.conversationId == widget.conversationId;
           }
@@ -100,11 +100,18 @@ class _ConversationDetailScreenState extends State<ConversationDetailScreen> {
         builder: (context, state) {
           print('⚡ ConversationDetailScreen building UI with state: ${state.runtimeType}');
           
-          // If we have a MessagesLoaded state but for a different conversation, 
-          // trigger a load for the current conversation
-          if (state is MessagesLoaded && state.conversationId != widget.conversationId) {
-            print('⚡ Got messages for different conversation, loading current conversation messages');
-            // This will happen on first build so don't need to explicitly request
+          // If we have cached messages, we should use them when not in a MessagesLoaded state
+          // This prevents flickering when transitioning between states
+          if (_cachedMessages != null && !(state is MessagesLoaded && state.conversationId == widget.conversationId)) {
+            print('⚡ Using cached messages: ${_cachedMessages!.length} messages');
+            return Column(
+              children: [
+                Expanded(
+                  child: _buildMessagesList(_cachedMessages!),
+                ),
+                _buildMessageInput(),
+              ],
+            );
           }
           
           if (state is MessagesLoaded && state.conversationId == widget.conversationId) {
@@ -119,9 +126,13 @@ class _ConversationDetailScreenState extends State<ConversationDetailScreen> {
             );
           } else if (state is ConversationError) {
             return Center(child: Text('Error: ${state.message}'));
-          } else {
+          } else if (_cachedMessages == null) {
+            // Only show loading if we don't have cached messages
             print('⚡ Showing loading indicator');
             return const Center(child: CircularProgressIndicator());
+          } else {
+            // This should never happen as we handle cached messages above
+            return const Center(child: Text('An unexpected error occurred'));
           }
         },
       ),
